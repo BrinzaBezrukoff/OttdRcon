@@ -1,9 +1,13 @@
+import time
+import hashlib
+from functools import wraps
+
+from flask import request, jsonify
+
 from libottdadmin2.client.tracking import TrackingMixIn
 from libottdadmin2.client.sync import OttdSocket, DefaultSelector
 from libottdadmin2.packets import AdminRcon
 from libottdadmin2.enums import DestType, ChatAction
-
-from app import app, scheduler
 
 
 dests = {
@@ -48,19 +52,68 @@ class Client(TrackingMixIn, OttdSocket):
         }
 
 
-selector = DefaultSelector()
-client = Client(password=app.config["OTTD_PASSWORD"])
-client.connect((app.config["OTTD_HOST"], app.config["OTTD_PORT"]))
-client.setblocking(False)
-client.register_to_selector(selector)
+class Session:
+    def __init__(self, user_id, token, host, port, password):
+        self.web_user_id = user_id
+        self.token = token
+        self.selector = DefaultSelector()
+        self.client = Client(password=password)
+        self.client.connect((host, port))
+        self.client.setblocking(False)
+        self.client.register_to_selector(self.selector)
+        self._job = None
+
+    def update(self):
+        while self.selector.get_map():
+            events = self.selector.select()
+            for key, mask in events:
+                callback = key.data
+                callback(key.fileobj, mask)
+
+    def register_job(self, scheduler):
+        self._job = scheduler.add_job(f"updater#{self.token}", self.update)
+
+    def close(self):
+        self._job.remove()
+        self.client.close()
 
 
-def updater():
-    while selector.get_map():
-        events = selector.select()
-        for key, mask in events:
-            callback = key.data
-            callback(key.fileobj, mask)
+class SessionManager:
+    def __init__(self, app, scheduler):
+        self.host = app.config["OTTD_HOST"]
+        self.port = app.config["OTTD_PORT"]
+        self.password = app.config["OTTD_PASSWORD"]
+        self.sessions = []
+        self.scheduler = scheduler
 
+    def new_session(self, u):
+        token_string = f"{u.id}:{u.password}:{time.time()}"
+        token = hashlib.sha256(token_string.encode("utf-8")).hexdigest()
+        session = Session(u.id, token, self.host, self.port, self.password)
+        session.register_job(self.scheduler)
+        self.sessions.append(session)
+        return session
 
-scheduler.add_job("updater", updater)
+    def get_session(self, token):
+        for s in self.sessions:
+            if s.token == token:
+                return s
+        return None
+
+    def close_session(self, token):
+        client = self.get_session(token)
+        self.sessions.remove(client)
+        client.close()
+
+    def session_required(self, func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            j = request.get_json()
+            token = j.get("token")
+            if not token:
+                return jsonify({"result": False, "message": "token_not_passed"})
+            session = self.get_session(token)
+            if not session:
+                return jsonify({"result": False, "message": "session_not_active"})
+            return func(session, *args, **kwargs)
+        return wrapper

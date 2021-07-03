@@ -1,4 +1,4 @@
-from app import app, scheduler
+from app import app, scheduler, sessions_manager
 import views
 import ottd
 

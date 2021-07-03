@@ -5,6 +5,7 @@ from flask_apscheduler import APScheduler
 
 
 from config import Config
+from ottd import SessionManager
 
 
 app = Flask(__name__)
@@ -17,3 +18,5 @@ lm = LoginManager(app)
 
 scheduler = APScheduler()
 scheduler.init_app(app)
+
+sessions_manager = SessionManager(app, scheduler)

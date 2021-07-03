@@ -2,12 +2,11 @@
 
 
 {% block scripts %}
-    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
-
     <script type="text/javascript">
         let ajax_command_send_url = "{{ url_for('ajax_command_send') }}"
         let ajax_update_console_url = "{{ url_for('ajax_update_console') }}"
         let logout_url = "{{ url_for('logout') }}"
+        const TOKEN = "{{ token }}"
     </script>
 
     <script type="text/javascript" src="{{ url_for('static', filename='js/panel.js') }}"></script>
