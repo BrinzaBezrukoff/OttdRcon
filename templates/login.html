@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+
+{% block scripts %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+
+    <script type="text/javascript">
+        let login_ajax_url = "{{ url_for('ajax_login') }}"
+        let panel_url = "{{ url_for('panel') }}"
+    </script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}
+
+
+{% block content %}
+
+    <h3>Log in to panel account</h3>
+    <form class="" onsubmit="return false;">
+        <div class="mb-3"><input type="text" id="username" placeholder="username" class="form-control"></div>
+        <div class="mb-3"><input type="password" id="password" placeholder="password" class="form-control"></div>
+        <div class="mb-3"><button type="button" id="login" class="form-control btn btn-primary">Log in</button></div>
+    </form>
+
+{% endblock %}

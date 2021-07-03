@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+
+{% block scripts %}
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+
+    <script type="text/javascript">
+        let ajax_command_send_url = "{{ url_for('ajax_command_send') }}"
+        let ajax_update_console_url = "{{ url_for('ajax_update_console') }}"
+        let logout_url = "{{ url_for('logout') }}"
+    </script>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='js/panel.js') }}"></script>
+{% endblock %}
+
+
+{% block content %}
+
+    <form class="" onsubmit="return false;">
+        <div class="mb-3"><textarea readonly id="console" class="form-control" rows="10" style="min-height: 100%;"></textarea></div>
+        <div class="mb-3"><input type="text" id="command" placeholder="command" class="form-control"></div>
+        <div class="mb-3"><button id="send" type="button" class="form-control btn btn-success">Send</button></div>
+    </form>
+
+{% endblock %}
